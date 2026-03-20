@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>URL Threat Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#f0f6ff;
+    --surface:#ffffff;
+    --surface2:#e8f0fc;
+    --surface3:#ddeaff;
+    --border:#c5d8f5;
+    --border2:#b0c9f0;
+    --accent:#1a6ff4;
+    --accent2:#0e52c1;
+    --accent-soft:#e4edff;
+    --danger:#e03050;
+    --danger-soft:#fff0f3;
+    --danger-border:#ffc2cc;
+    --safe:#0e9e6a;
+    --safe-soft:#edfaf5;
+    --safe-border:#a0eacf;
+    --warn:#d97706;
+    --warn-soft:#fffbeb;
+    --text:#0d1b35;
+    --text2:#3a5278;
+    --muted:#7a90b0;
+    --mono:'IBM Plex Mono',monospace;
+    --sans:'Plus Jakarta Sans',sans-serif;
+    --radius:14px;
+    --shadow:0 2px 12px rgba(26,111,244,0.10), 0 1px 3px rgba(26,111,244,0.07);
+    --shadow-lg:0 8px 32px rgba(26,111,244,0.13), 0 2px 8px rgba(26,111,244,0.08);
+  }
+
+  body{
+    background:var(--bg);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(26,111,244,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 90% 80%, rgba(14,166,106,0.06) 0%, transparent 50%);
+    font-family:var(--sans);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:2.5rem 1rem 4rem;
+  }
+
+  .shell{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:2rem;
+    width:100%;
+    max-width:800px;
+    box-shadow:var(--shadow-lg);
+    position:relative;
+  }
+
+  /* Top gradient line */
+  .shell::before{
+    content:'';position:absolute;top:0;left:20px;right:20px;height:2px;
+    background:linear-gradient(90deg,transparent,var(--accent),rgba(14,166,106,0.6),transparent);
+    border-radius:99px;
+  }
+
+  /* ── Header ── */
+  .header{display:flex;align-items:center;gap:14px;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
+  .logo-mark{
+    width:44px;height:44px;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),#38a5ff);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    box-shadow:0 4px 14px rgba(26,111,244,0.3);
+  }
+  .logo-icon{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round}
+  .title-block h1{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-0.4px}
+  .title-block p{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:3px;letter-spacing:0.8px}
+  .badge{
+    margin-left:auto;font-size:10px;font-family:var(--mono);
+    padding:4px 10px;border-radius:6px;
+    background:var(--accent-soft);color:var(--accent);
+    border:1px solid rgba(26,111,244,0.2);
+    letter-spacing:0.5px;font-weight:500;
+  }
+
+  /* ── Tabs ── */
+  .tabs{
+    display:flex;gap:6px;margin-bottom:1.75rem;
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:12px;padding:5px;
+  }
+  .tab{
+    flex:1;padding:10px 12px;border:none;
+    background:transparent;color:var(--muted);
+    font-family:var(--sans);font-size:13px;font-weight:600;
+    cursor:pointer;border-radius:9px;
+    transition:all 0.2s;
+    display:flex;align-items:center;justify-content:center;gap:7px;
+  }
+  .tab svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;flex-shrink:0;}
+  .tab.active{
+    background:var(--surface);color:var(--accent);
+    border:1px solid var(--border);
+    box-shadow:var(--shadow);
+  }
+  .tab:hover:not(.active){color:var(--text2);background:rgba(26,111,244,0.05);}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  /* ── Form Elements ── */
+  .field-label{
+    font-size:10px;font-family:var(--mono);
+    color:var(--muted);letter-spacing:1px;
+    margin-bottom:8px;font-weight:500;
+  }
+  .input-row{display:flex;gap:10px;margin-bottom:1.5rem}
+  .url-input{
+    flex:1;background:var(--surface);
+    border:1.5px solid var(--border);
+    border-radius:10px;padding:11px 16px;
+    font-size:13.5px;color:var(--text);
+    font-family:var(--mono);outline:none;
+    transition:border-color 0.2s,box-shadow 0.2s;
+  }
+  .url-input::placeholder{color:var(--muted);font-size:12.5px}
+  .url-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,111,244,0.1)}
+  textarea.url-input {resize: vertical;min-height: 260px;height: 260px;line-height: 1.8;width: 100%;display: block;}
+
+  .scan-btn{
+    background:linear-gradient(135deg,var(--accent),#3a8fff);
+    border:none;border-radius:10px;
+    padding:11px 22px;font-size:13px;font-weight:700;
+    font-family:var(--sans);color:#fff;
+    cursor:pointer;white-space:nowrap;
+    transition:all 0.2s;
+    display:flex;align-items:center;gap:8px;
+    box-shadow:0 3px 10px rgba(26,111,244,0.3);
+  }
+  .scan-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(26,111,244,0.35)}
+  .scan-btn:active{transform:translateY(0)}
+  .scan-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none}
+  .bulk-btn{width:100%;justify-content:center;margin-bottom:1.5rem;padding:13px;}
+
+  .scan-btn.cancellable{background:linear-gradient(135deg,var(--danger),#ff5a7a);}
+  .scan-btn.cancellable:hover{box-shadow:0 6px 18px rgba(224,48,80,0.35)}
+
+  .spin{animation:spin 0.8s linear infinite;display:none;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading .spin{display:block}
+  .loading .btn-icon{display:none}
+
+  .divider{border:none;border-top:1px solid var(--border);margin:0.25rem 0 1.5rem}
+
+  /* ── Result Cards ── */
+  .result-box{
+    border-radius:var(--radius);padding:1.5rem;
+    border:1.5px solid;animation:fadeIn 0.3s ease;
+    position:relative;overflow:hidden;
+  }
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .result-box.danger{background:var(--danger-soft);border-color:var(--danger-border)}
+  .result-box.safe{background:var(--safe-soft);border-color:var(--safe-border)}
+  .result-box.danger::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--danger),transparent)}
+  .result-box.safe::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--safe),transparent)}
+
+  .result-header{display:flex;align-items:center;gap:14px;margin-bottom:1.25rem}
+  .status-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .danger .status-icon{background:rgba(224,48,80,0.1);border:1.5px solid rgba(224,48,80,0.2)}
+  .safe .status-icon{background:rgba(14,158,106,0.1);border:1.5px solid rgba(14,158,106,0.2)}
+  .status-icon svg{width:22px;height:22px;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;}
+  .danger .status-icon svg{stroke:var(--danger)}
+  .safe .status-icon svg{stroke:var(--safe)}
+  .status-label{font-size:18px;font-weight:700;letter-spacing:-0.3px}
+  .danger .status-label{color:var(--danger)}
+  .safe .status-label{color:var(--safe)}
+  .status-sub{font-size:11.5px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+
+  .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+  .meta-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 14px}
+  .meta-card .mk{font-size:9.5px;font-family:var(--mono);color:var(--muted);letter-spacing:0.8px;margin-bottom:5px;font-weight:500}
+  .meta-card .mv{font-size:13px;font-weight:600;color:var(--text)}
+
+  .risk-section{margin-bottom:1rem}
+  .risk-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+  .risk-label{font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:0.8px}
+  .risk-pct{font-size:13px;font-weight:700;font-family:var(--mono)}
+  .danger .risk-pct{color:var(--danger)}
+  .safe .risk-pct{color:var(--safe)}
+  .risk-bar-bg{height:7px;background:var(--surface2);border-radius:99px;overflow:hidden;border:1px solid var(--border)}
+  .risk-bar-fill{height:100%;border-radius:99px;transition:width 0.9s cubic-bezier(.25,.46,.45,.94)}
+  .danger .risk-bar-fill{background:linear-gradient(90deg,#f87a90,var(--danger))}
+  .safe .risk-bar-fill{background:linear-gradient(90deg,#5dd9a8,var(--safe))}
+
+  .reason-box{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 14px}
+  .reason-box .rk{font-size:9.5px;font-family:var(--mono);color:var(--muted);letter-spacing:0.8px;margin-bottom:7px;font-weight:500}
+  .reason-box .rv{font-size:13px;color:var(--text2);line-height:1.65}
+
+  .empty-state{text-align:center;padding:2.5rem 1rem;color:var(--muted)}
+  .empty-icon{width:52px;height:52px;margin:0 auto 14px;opacity:0.22}
+  .empty-state p{font-size:13px;color:var(--muted)}
+
+  /* ── Bulk / Summary ── */
+  .summary-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem;}
+  .sum-card{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;text-align:center;}
+  .sum-card .sn{font-size:24px;font-weight:700;font-family:var(--mono);}
+  .sum-card .sl{font-size:9.5px;font-family:var(--mono);color:var(--muted);letter-spacing:0.8px;margin-top:3px;}
+  .sum-card.total{border-color:rgba(26,111,244,0.2);background:var(--accent-soft);}
+  .sum-card.total .sn{color:var(--accent)}
+  .sum-card.sdanger{border-color:var(--danger-border);background:var(--danger-soft);}
+  .sum-card.sdanger .sn{color:var(--danger)}
+  .sum-card.ssafe{border-color:var(--safe-border);background:var(--safe-soft);}
+  .sum-card.ssafe .sn{color:var(--safe)}
+
+  .bulk-list{display:flex;flex-direction:column;gap:7px;max-height:400px;overflow-y:auto;padding-right:4px;}
+  .bulk-list::-webkit-scrollbar{width:5px;}
+  .bulk-list::-webkit-scrollbar-track{background:var(--surface2);border-radius:4px;}
+  .bulk-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+  .bulk-list::-webkit-scrollbar-thumb:hover{background:var(--muted);}
+
+  .bulk-row{
+    background:var(--surface);border:1.5px solid var(--border);
+    border-radius:10px;padding:11px 14px;
+    display:flex;align-items:center;gap:11px;
+    transition:border-color 0.2s,box-shadow 0.2s;
+  }
+  .bulk-row:hover{box-shadow:0 2px 8px rgba(26,111,244,0.08)}
+  .bulk-row.danger{border-color:var(--danger-border);background:var(--danger-soft);}
+  .bulk-row.safe{border-color:var(--safe-border);background:var(--safe-soft);}
+  .bulk-row.error{border-color:rgba(217,119,6,0.3);background:var(--warn-soft);}
+  .bulk-row.scanning{opacity:0.55;animation:pulse 1.2s ease-in-out infinite;}
+  .bulk-row.cancelled{opacity:0.4;border-color:var(--muted);}
+  @keyframes pulse{0%,100%{opacity:0.55}50%{opacity:0.85}}
+
+  .row-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .danger .row-dot{background:var(--danger);}
+  .safe .row-dot{background:var(--safe);}
+  .error .row-dot{background:var(--warn);}
+  .scanning .row-dot{background:var(--muted);animation:pulse 1s ease infinite;}
+  .cancelled .row-dot{background:var(--muted);}
+
+  .row-url{flex:1;font-size:12.5px;font-family:var(--mono);color:var(--text2);word-break:break-all;min-width:0;}
+  .row-badge{font-size:9.5px;font-family:var(--mono);padding:3px 9px;border-radius:5px;letter-spacing:0.5px;white-space:nowrap;flex-shrink:0;font-weight:600;}
+  .danger .row-badge{background:rgba(224,48,80,0.1);color:var(--danger);border:1px solid var(--danger-border);}
+  .safe .row-badge{background:rgba(14,158,106,0.1);color:var(--safe);border:1px solid var(--safe-border);}
+  .error .row-badge{background:rgba(217,119,6,0.1);color:var(--warn);border:1px solid rgba(217,119,6,0.25);}
+  .scanning .row-badge{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+  .cancelled .row-badge{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+  .row-score{font-size:11px;font-family:var(--mono);color:var(--muted);flex-shrink:0;min-width:38px;text-align:right;}
+
+  .progress-wrap{margin-bottom:1rem;}
+  .progress-label{display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono);color:var(--muted);margin-bottom:6px;}
+  .prog-bg{height:5px;background:var(--surface2);border-radius:99px;overflow:hidden;border:1px solid var(--border);}
+  .prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),#38a5ff);border-radius:99px;transition:width 0.4s ease;}
+
+  /* ── CSV Upload Tab ── */
+  .csv-drop-zone{
+    border:2px dashed var(--border2);
+    border-radius:var(--radius);
+    padding:3rem 2rem;
+    text-align:center;
+    cursor:pointer;
+    transition:all 0.2s;
+    background:var(--surface2);
+    position:relative;
+    margin-bottom:1.25rem;
+  }
+  .csv-drop-zone:hover, .csv-drop-zone.drag-over{
+    border-color:var(--accent);
+    background:var(--accent-soft);
+  }
+  .csv-drop-zone input[type=file]{
+    position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;
+  }
+  .drop-icon{
+    width:52px;height:52px;margin:0 auto 16px;
+    background:linear-gradient(135deg,var(--accent),#38a5ff);
+    border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 14px rgba(26,111,244,0.25);
+  }
+  .drop-icon svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .drop-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;}
+  .drop-sub{font-size:12.5px;color:var(--muted);line-height:1.6;}
+  .drop-sub span{color:var(--accent);font-weight:600;}
+
+  .csv-info-bar{
+    display:flex;align-items:center;gap:12px;
+    background:var(--accent-soft);
+    border:1px solid rgba(26,111,244,0.2);
+    border-radius:10px;padding:12px 16px;
+    margin-bottom:1.25rem;
+    animation:fadeIn 0.3s ease;
+  }
+  .csv-info-bar .ci-icon{
+    width:34px;height:34px;border-radius:8px;
+    background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .csv-info-bar .ci-icon svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;}
+  .csv-info-bar .ci-name{font-size:13px;font-weight:600;color:var(--text)}
+  .csv-info-bar .ci-meta{font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:2px;}
+  .csv-clear-btn{
+    margin-left:auto;background:none;border:1px solid var(--border);
+    border-radius:7px;padding:5px 11px;font-size:11.5px;
+    color:var(--muted);cursor:pointer;font-family:var(--sans);font-weight:500;
+    transition:all 0.2s;
+  }
+  .csv-clear-btn:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-soft);}
+
+  .csv-col-hint{
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:9px;padding:12px 14px;
+    margin-bottom:1.25rem;
+    display:flex;gap:14px;align-items:flex-start;
+  }
+  .csv-col-hint svg{width:16px;height:16px;flex-shrink:0;margin-top:1px;fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;}
+  .csv-col-hint p{font-size:12px;color:var(--text2);line-height:1.6;}
+  .csv-col-hint code{font-family:var(--mono);font-size:11px;background:var(--surface3);padding:1px 5px;border-radius:4px;color:var(--accent);}
+
+  .export-btn{
+    display:flex;align-items:center;gap:8px;
+    background:var(--surface);border:1.5px solid var(--border);
+    border-radius:9px;padding:9px 16px;
+    font-size:12.5px;font-weight:600;color:var(--text2);
+    cursor:pointer;font-family:var(--sans);
+    transition:all 0.2s;
+    box-shadow:0 1px 4px rgba(26,111,244,0.07);
+  }
+  .export-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .export-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
+
+  .result-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+  .result-toolbar-left{font-size:11px;font-family:var(--mono);color:var(--muted);}
+
+  /* ── Footer deco ── */
+  .footer-deco{
+    margin-top:2rem;padding-top:1rem;
+    border-top:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .sys-status{display:flex;align-items:center;gap:8px;}
+  .status-dot{width:7px;height:7px;border-radius:50%;background:var(--safe);box-shadow:0 0 6px rgba(14,158,106,0.5);animation:glow 2s ease-in-out infinite;}
+  @keyframes glow{0%,100%{box-shadow:0 0 6px rgba(14,158,106,0.4)}50%{box-shadow:0 0 12px rgba(14,158,106,0.7)}}
+  .status-text{font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:0.5px;}
+  .powered{font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:0.5px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="header">
+    <div class="logo-mark">
+      <svg class="logo-icon" viewBox="0 0 24 24">
+        <path d="M12 3L3 7v5c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7L12 3z"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
+    </div>
+    <div class="title-block">
+      <h1>URL Threat Analyzer</h1>
+      <p>CYBER INTELLIGENCE PLATFORM</p>
+    </div>
+    <span class="badge">v3.1</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('single',this)">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      ตรวจสอบ URL เดียว
+    </button>
+    <button class="tab" onclick="switchTab('bulk',this)">
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      ตรวจสอบหลาย URL
+    </button>
+    <button class="tab" onclick="switchTab('csv',this)">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      นำเข้าไฟล์ CSV
+    </button>
+  </div>
+
+  <!-- ══ Single URL Panel ══ -->
+  <div class="panel active" id="panel-single">
+    <div class="field-label">TARGET URL</div>
+    <div class="input-row">
+      <input class="url-input" type="text" id="urlInput" placeholder="https://example.com/suspicious-path"/>
+      <button class="scan-btn" id="scanBtn" onclick="runSingle()">
+        <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div class="spin" id="spinner"></div>
+        <span id="btnText">ตรวจสอบ</span>
+      </button>
+    </div>
+    <hr class="divider"/>
+    <div id="resultArea">
+      <div class="empty-state">
+        <svg class="empty-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M24 6L6 14v10c0 11 7.6 21.4 18 24 10.4-2.6 18-13 18-24V14L24 6z"/>
+          <circle cx="24" cy="23" r="6"/>
+          <path d="M24 17v-4M24 29v4M18 23h-4M30 23h4"/>
+        </svg>
+        <p>กรอก URL แล้วกด "ตรวจสอบ" เพื่อวิเคราะห์ความปลอดภัย</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Bulk URL Panel ══ -->
+  <div class="panel" id="panel-bulk">
+    <div class="field-label">วาง URL ทีละบรรทัด (รองรับสูงสุด 500 URLs)</div>
+    <textarea class="url-input" id="bulkInput" placeholder="https://example.com&#10;https://suspicious-site.xyz/phish&#10;https://google.com&#10;..."></textarea>
+    <button class="scan-btn bulk-btn" id="bulkBtn" onclick="toggleBulkScan()">
+      <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <div class="spin" id="bulkSpinner"></div>
+      <span id="bulkBtnText">สแกนทั้งหมด</span>
+    </button>
+    <hr class="divider"/>
+    <div id="bulkResultArea">
+      <div class="empty-state">
+        <svg class="empty-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="6" y="10" width="36" height="6" rx="2"/>
+          <rect x="6" y="22" width="36" height="6" rx="2"/>
+          <rect x="6" y="34" width="36" height="6" rx="2"/>
+        </svg>
+        <p>วาง URL หลายบรรทัดแล้วกด "สแกนทั้งหมด"</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CSV Upload Panel ══ -->
+  <div class="panel" id="panel-csv">
+
+    <div class="csv-col-hint">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p>รองรับไฟล์ <code>.csv</code> และ <code>.txt</code> สำหรับ CSV ระบบจะค้นหาคอลัมน์ที่ชื่อ <code>url</code>, <code>URL</code>, <code>link</code>, หรือ <code>domain</code> ให้อัตโนมัติ สำหรับ TXT ให้วาง URL ทีละบรรทัด รองรับสูงสุด <code>10,000 URLs</code></p>
+    </div>
+
+    <div class="csv-drop-zone" id="csvDropZone">
+      <input type="file" accept=".csv,.txt,text/csv,text/plain" id="csvFileInput" onchange="handleCsvFile(this.files[0])"/>
+      <div class="drop-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <div class="drop-title">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</div>
+      <div class="drop-sub">รองรับ <span>.csv</span> และ <span>.txt</span> สูงสุด 10,000 URLs</div>
+    </div>
+
+    <div id="csvInfoBar" style="display:none"></div>
+
+    <button class="scan-btn bulk-btn" id="csvScanBtn" onclick="toggleCsvScan()" style="display:none">
+      <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <div class="spin" id="csvSpinner"></div>
+      <span id="csvBtnText">สแกนทั้งหมด</span>
+    </button>
+
+    <hr class="divider" id="csvDivider" style="display:none"/>
+
+    <div id="csvResultArea">
+      <div class="empty-state">
+        <svg class="empty-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M28 4H12a4 4 0 00-4 4v32a4 4 0 004 4h24a4 4 0 004-4V16L28 4z"/>
+          <polyline points="28 4 28 16 40 16"/>
+          <line x1="16" y1="24" x2="32" y2="24"/>
+          <line x1="16" y1="32" x2="28" y2="32"/>
+        </svg>
+        <p>อัพโหลดไฟล์ CSV เพื่อสแกน URL ทั้งหมดในไฟล์</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-deco">
+    <div class="sys-status">
+      <div class="status-dot"></div>
+      <span class="status-text">SCAN ENGINE ACTIVE // API READY</span>
+    </div>
+    <span class="powered">FUSION AI · XGBOOST · LAYER-3</span>
+  </div>
+
+</div>
+
+<script>
+// ─── Global State & Abort Controllers ───
+let globalAbortController = null;
+let singleAbortController = null;
+let bulkRunning = false;
+let csvRunning = false;
+let csvUrls = [];
+
+// ─── Cleanup on page unload / refresh ───
+window.addEventListener('beforeunload', () => {
+  if (globalAbortController) {
+    globalAbortController.abort();
+    console.log('⚠️ ยกเลิกการสแกนทั้งหมด - หน้าเว็บกำลังปิด/รีเฟรช');
+  }
+  if (singleAbortController) {
+    singleAbortController.abort();
+  }
+});
+
+// ─── Tab Switcher (with abort on switch) ───
+function switchTab(name, el) {
+  // ยกเลิกการสแกนทั้งหมดเมื่อเปลี่ยน Tab
+  if (globalAbortController) {
+    globalAbortController.abort();
+    globalAbortController = null;
+    resetBulkUI();
+    resetCsvUI();
+  }
+  if (singleAbortController) {
+    singleAbortController.abort();
+    singleAbortController = null;
+    resetSingleUI();
+  }
+  
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ─── Drag & Drop for CSV ───
+const dropZone = document.getElementById('csvDropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && (file.name.endsWith('.csv') || file.name.endsWith('.txt') || file.type === 'text/csv' || file.type === 'text/plain')) handleCsvFile(file);
+});
+
+// ─── Single URL ───
+async function runSingle() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { document.getElementById('urlInput').focus(); return; }
+  
+  // Create new abort controller for this request
+  singleAbortController = new AbortController();
+  
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true; btn.classList.add('loading');
+  document.getElementById('btnText').textContent = 'กำลังสแกน...';
+  
+  try {
+    const res = await fetch('http://127.0.0.1:5000/analyze', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url}),
+      signal: singleAbortController.signal,  // Add abort signal
+      // Increase timeout for better performance
+      keepalive: true
+    });
+    
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    renderSingleResult(data);
+  } catch(e) {
+    if (e.name === 'AbortError') {
+      renderSingleError('การสแกนถูกยกเลิก');
+    } else {
+      renderSingleError(e.message);
+    }
+  } finally {
+    singleAbortController = null;
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    document.getElementById('btnText').textContent = 'ตรวจสอบ';
+  }
+}
+
+function resetSingleUI() {
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = false;
+  btn.classList.remove('loading');
+  document.getElementById('btnText').textContent = 'ตรวจสอบ';
+}
+
+document.getElementById('urlInput').addEventListener('keydown', e => { if(e.key==='Enter') runSingle(); });
+
+function renderSingleResult(d) {
+  const isDanger = d.status === 'danger';
+  const pct = Math.min(100, Math.max(0, Math.round(d.risk_score || 0)));
+  const dIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+  const sIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3L3 7v5c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7L12 3z"/><path d="M9 12l2 2 4-4"/></svg>`;
+  document.getElementById('resultArea').innerHTML = `
+    <div class="result-box ${d.status}">
+      <div class="result-header">
+        <div class="status-icon">${isDanger ? dIcon : sIcon}</div>
+        <div>
+          <div class="status-label">${isDanger ? 'THREAT DETECTED' : 'URL SAFE'}</div>
+          <div class="status-sub">${isDanger ? 'url flagged as malicious' : 'no threat indicators found'}</div>
+        </div>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-card"><div class="mk">GENERATION TYPE</div><div class="mv">${d.generation_type||'—'}</div></div>
+        <div class="meta-card"><div class="mk">TARGET CATEGORY</div><div class="mv">${d.target_category||'—'}</div></div>
+      </div>
+      <div class="risk-section">
+        <div class="risk-header"><span class="risk-label">RISK SCORE</span><span class="risk-pct">${pct}%</span></div>
+        <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:0%" id="rbar"></div></div>
+      </div>
+      <div class="reason-box"><div class="rk">ANALYSIS REASON</div><div class="rv">${d.reason||'—'}</div></div>
+    </div>`;
+  setTimeout(() => { const b=document.getElementById('rbar'); if(b) b.style.width=pct+'%'; }, 50);
+}
+
+function renderSingleError(msg) {
+  document.getElementById('resultArea').innerHTML = `
+    <div class="result-box danger">
+      <div class="result-header">
+        <div class="status-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+        <div><div class="status-label">CONNECTION ERROR</div><div class="status-sub">ไม่สามารถเชื่อมต่อ API ได้</div></div>
+      </div>
+      <div class="reason-box"><div class="rk">ERROR</div><div class="rv">${msg}</div></div>
+    </div>`;
+}
+
+// ─── Bulk Scan (with cancel support) ───
+function toggleBulkScan() {
+  if (bulkRunning) {
+    // Cancel scan
+    if (globalAbortController) {
+      globalAbortController.abort();
+      globalAbortController = null;
+    }
+    bulkRunning = false;
+    resetBulkUI();
+  } else {
+    // Start scan
+    runBulk();
+  }
+}
+
+async function runBulk() {
+  const raw = document.getElementById('bulkInput').value;
+  const urls = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0).slice(0, 500);
+  if (urls.length === 0) { document.getElementById('bulkInput').focus(); return; }
+  
+  bulkRunning = true;
+  globalAbortController = new AbortController();
+  
+  await runScanEngine(
+    urls,
+    'bulkBtn',
+    'bulkSpinner',
+    'bulkBtnText',
+    'bulkResultArea',
+    () => {
+      bulkRunning = false;
+      globalAbortController = null;
+    },
+    false
+  );
+}
+
+function resetBulkUI() {
+  const btn = document.getElementById('bulkBtn');
+  btn.disabled = false;
+  btn.classList.remove('loading', 'cancellable');
+  document.getElementById('bulkBtnText').textContent = 'สแกนทั้งหมด';
+  bulkRunning = false;
+}
+
+// ─── CSV Upload ───
+function handleCsvFile(file) {
+  if (!file) return;
+  const isTxt = file.name.toLowerCase().endsWith('.txt') || file.type === 'text/plain';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    let urls, colName, total;
+    if (isTxt) {
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0 && (l.startsWith('http') || l.includes('.')));
+      urls = lines.slice(0, 10000);
+      colName = 'บรรทัด (TXT)';
+      total = lines.length;
+    } else {
+      ({ urls, colName, total } = parseCsvUrls(text));
+    }
+    csvUrls = urls;
+
+    const infoBar = document.getElementById('csvInfoBar');
+    infoBar.style.display = 'flex';
+    infoBar.innerHTML = `
+      <div class="csv-info-bar">
+        <div class="ci-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div>
+          <div class="ci-name">${escHtml(file.name)}</div>
+          <div class="ci-meta">พบ ${urls.length} URLs · ${escHtml(colName)} · ทั้งหมด ${total} บรรทัด</div>
+        </div>
+        <button class="csv-clear-btn" onclick="clearCsv()">✕ ล้าง</button>
+      </div>`;
+
+    document.getElementById('csvScanBtn').style.display = 'flex';
+    document.getElementById('csvDivider').style.display = 'block';
+    document.getElementById('csvResultArea').innerHTML = `
+      <div class="empty-state">
+        <svg class="empty-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M28 4H12a4 4 0 00-4 4v32a4 4 0 004 4h24a4 4 0 004-4V16L28 4z"/>
+          <polyline points="28 4 28 16 40 16"/>
+          <line x1="16" y1="24" x2="32" y2="24"/>
+        </svg>
+        <p>พบ <strong>${urls.length} URLs</strong> — กด "สแกนทั้งหมด" เพื่อเริ่ม</p>
+      </div>`;
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCsvUrls(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length === 0) return { urls: [], colName: '-', total: 0 };
+
+  const header = lines[0].split(',');
+  const urlColNames = ['url','URL','Url','link','Link','LINK','domain','Domain','DOMAIN','uri','URI'];
+  let colIdx = -1;
+  let colName = 'คอลัมน์ที่ 1';
+  let hasHeader = false;
+
+  for (const name of urlColNames) {
+    const idx = header.findIndex(h => h.trim().replace(/"/g,'') === name);
+    if (idx !== -1) { colIdx = idx; colName = name; hasHeader = true; break; }
+  }
+  if (colIdx === -1) colIdx = 0;
+
+  const dataLines = hasHeader ? lines.slice(1) : lines;
+  const urls = dataLines
+    .map(l => {
+      const cols = l.split(',');
+      return (cols[colIdx] || '').trim().replace(/^"|"$/g, '');
+    })
+    .filter(u => u.length > 0 && (u.startsWith('http') || u.includes('.')))
+    .slice(0, 10000);
+
+  return { urls, colName, total: dataLines.length };
+}
+
+function clearCsv() {
+  // Abort any running scan
+  if (csvRunning && globalAbortController) {
+    globalAbortController.abort();
+    globalAbortController = null;
+  }
+  
+  csvUrls = [];
+  csvRunning = false;
+  document.getElementById('csvInfoBar').style.display = 'none';
+  document.getElementById('csvScanBtn').style.display = 'none';
+  document.getElementById('csvDivider').style.display = 'none';
+  document.getElementById('csvFileInput').value = '';
+  document.getElementById('csvResultArea').innerHTML = `
+    <div class="empty-state">
+      <svg class="empty-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M28 4H12a4 4 0 00-4 4v32a4 4 0 004 4h24a4 4 0 004-4V16L28 4z"/>
+        <polyline points="28 4 28 16 40 16"/>
+        <line x1="16" y1="24" x2="32" y2="24"/>
+      </svg>
+      <p>อัพโหลดไฟล์ CSV เพื่อสแกน URL ทั้งหมดในไฟล์</p>
+    </div>`;
+  resetCsvUI();
+}
+
+function toggleCsvScan() {
+  if (csvRunning) {
+    // Cancel scan
+    if (globalAbortController) {
+      globalAbortController.abort();
+      globalAbortController = null;
+    }
+    csvRunning = false;
+    resetCsvUI();
+  } else {
+    // Start scan
+    runCsv();
+  }
+}
+
+async function runCsv() {
+  if (csvUrls.length === 0) return;
+  
+  csvRunning = true;
+  globalAbortController = new AbortController();
+  
+  await runScanEngine(
+    csvUrls,
+    'csvScanBtn',
+    'csvSpinner',
+    'csvBtnText',
+    'csvResultArea',
+    (results) => {
+      csvRunning = false;
+      globalAbortController = null;
+      window._lastCsvResults = results;
+    },
+    true
+  );
+}
+
+function resetCsvUI() {
+  const btn = document.getElementById('csvScanBtn');
+  btn.disabled = false;
+  btn.classList.remove('loading', 'cancellable');
+  document.getElementById('csvBtnText').textContent = 'สแกนทั้งหมด';
+  csvRunning = false;
+}
+
+// ─── Shared scan engine (OPTIMIZED with fetch pooling) ───
+async function runScanEngine(urls, btnId, spinnerId, btnTextId, areaId, onDone, isCsv = false) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = false; // Enable for cancel
+  btn.classList.add('loading', 'cancellable');
+  document.getElementById(btnTextId).textContent = '⏸ ยกเลิก';
+
+  const area = document.getElementById(areaId);
+  const results = urls.map((url, i) => ({
+    url, idx: i, status: 'scanning',
+    risk_score: null, reason: '', generation_type: '', target_category: ''
+  }));
+
+  function render() {
+    const done = results.filter(r => r.status !== 'scanning');
+    const dangers = results.filter(r => r.status === 'danger');
+    const safes = results.filter(r => r.status === 'safe');
+    const cancelled = results.filter(r => r.status === 'cancelled');
+    const progPct = Math.round((done.length / results.length) * 100);
+    const scanning = done.length < results.length;
+
+    area.innerHTML = `
+      ${scanning
+        ? `<div class="progress-wrap">
+            <div class="progress-label"><span>กำลังสแกน...</span><span>${done.length} / ${results.length}</span></div>
+            <div class="prog-bg"><div class="prog-fill" style="width:${progPct}%"></div></div>
+           </div>`
+        : `<div class="result-toolbar">
+            <span class="result-toolbar-left">ผลลัพธ์ ${results.length} URLs ${cancelled.length > 0 ? `(ยกเลิก ${cancelled.length})` : ''}</span>
+            ${isCsv ? `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="export-btn" onclick="exportCsvSimple(window._lastCsvResults)" title="url + label เท่านั้น">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                url + label
+              </button>
+              <button class="export-btn" onclick="exportCsvResults(window._lastCsvResults)" title="ผลลัพธ์ทุกคอลัมน์">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                ผลลัพธ์เต็ม
+              </button>
+            </div>` : ''}
+           </div>
+           <div class="summary-bar">
+            <div class="sum-card total"><div class="sn">${results.length}</div><div class="sl">TOTAL</div></div>
+            <div class="sum-card sdanger"><div class="sn">${dangers.length}</div><div class="sl">THREATS</div></div>
+            <div class="sum-card ssafe"><div class="sn">${safes.length}</div><div class="sl">SAFE</div></div>
+           </div>`
+      }
+      <div class="bulk-list">
+        ${results.map(r => {
+          const pct = r.risk_score !== null ? Math.min(100,Math.max(0,Math.round(r.risk_score))) : null;
+          let badge = 'SCANNING...';
+          if (r.status === 'scanning') badge = 'SCANNING...';
+          else if (r.status === 'error') badge = 'ERROR';
+          else if (r.status === 'danger') badge = 'DANGER';
+          else if (r.status === 'safe') badge = 'SAFE';
+          else if (r.status === 'cancelled') badge = 'CANCELLED';
+          
+          return `<div class="bulk-row ${r.status}">
+            <div class="row-dot"></div>
+            <div class="row-url">${escHtml(r.url)}</div>
+            <div class="row-score">${pct!==null?pct+'%':''}</div>
+            <div class="row-badge">${badge}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  render();
+  
+  // ปรับเพิ่ม Concurrency เพื่อความเร็ว (จาก 5 -> 10)
+  const CONCURRENCY = 10;
+  let idx = 0;
+  let cancelled = false;
+  
+  // Listen for abort signal
+  globalAbortController.signal.addEventListener('abort', () => {
+    cancelled = true;
+    // Mark remaining as cancelled
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].status === 'scanning') {
+        results[i].status = 'cancelled';
+        results[i].reason = 'ยกเลิกโดยผู้ใช้';
+      }
+    }
+    render();
+  });
+  
+  async function worker() {
+    while (idx < urls.length && !cancelled) {
+      const i = idx++;
+      try {
+        const res = await fetch('http://127.0.0.1:5000/analyze', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ url: urls[i] }),
+          signal: globalAbortController.signal,
+          // Performance optimizations
+          keepalive: true,
+          // Disable cache to ensure fresh results
+          cache: 'no-store'
+        });
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const d = await res.json();
+        results[i] = { ...results[i], ...d };
+      } catch(e) {
+        if (e.name === 'AbortError' || cancelled) {
+          results[i].status = 'cancelled';
+          results[i].reason = 'ยกเลิกโดยผู้ใช้';
+        } else {
+          results[i].status = 'error';
+          results[i].reason = e.message;
+        }
+      }
+      render();
+    }
+  }
+  
+  await Promise.all(Array.from({length: CONCURRENCY}, worker));
+
+  btn.disabled = false;
+  btn.classList.remove('loading', 'cancellable');
+  document.getElementById(btnTextId).textContent = 'สแกนทั้งหมด';
+
+  if (isCsv) window._lastCsvResults = results;
+  if (typeof onDone === 'function') onDone(results);
+}
+
+// ─── Export CSV Results (full detail) ───
+function exportCsvResults(results) {
+  if (!results) return;
+  const header = 'url,status,risk_score,generation_type,target_category,reason';
+  const rows = results.map(r =>
+    [r.url, r.status, r.risk_score ?? '', r.generation_type || '', r.target_category || '', (r.reason || '').replace(/,/g, ';')]
+      .map(v => `"${String(v).replace(/"/g,'""')}"`)
+      .join(',')
+  );
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'scan_results_full.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Export CSV Simple (url + label only) ───
+function exportCsvSimple(results) {
+  if (!results) return;
+  const header = 'url,label';
+  const rows = results.map(r => {
+    const label = r.status === 'danger' ? 'phishing' : r.status === 'safe' ? 'legitimate' : r.status;
+    return [r.url, label].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+  });
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'scan_results_labels.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

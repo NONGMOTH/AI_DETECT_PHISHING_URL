@@ -1,0 +1,39 @@
+# ════════════════════════════════════════════════════════════════════
+# 📦 REQUIREMENTS FOR ULTRA-PRECISION GPU TRAINING
+# RTX 4050 Laptop - CUDA 12.x Compatible
+# ════════════════════════════════════════════════════════════════════
+
+# Core ML Libraries
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# XGBoost with GPU Support
+xgboost>=2.0.0
+
+# Feature Extraction
+tldextract>=5.0.0
+
+# Hyperparameter Tuning
+optuna>=3.5.0
+
+# Utilities
+tqdm>=4.66.0
+joblib>=1.3.0
+scipy>=1.11.0
+
+# ════════════════════════════════════════════════════════════════════
+# 🚀 INSTALLATION INSTRUCTIONS
+# ════════════════════════════════════════════════════════════════════
+
+# 1. Install CUDA Toolkit 12.x (if not installed)
+#    Download: https://developer.nvidia.com/cuda-downloads
+
+# 2. Install Python packages:
+#    pip install -r requirements_gpu.txt
+
+# 3. Verify GPU:
+#    python -c "import xgboost as xgb; print(xgb.get_config())"
+
+# 4. Run training:
+#    python train_ultra_precision_GPU.py
